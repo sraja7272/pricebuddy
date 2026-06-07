@@ -141,12 +141,6 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        Log::info('OIDC: driver registered', [
-            'base_url'    => config('services.oidc.base_url'),
-            'scopes'      => config('services.oidc.scopes'),
-            'admin_group' => config('services.oidc.admin_group') ?: '(not set)',
-        ]);
-
         Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
             $event->extendSocialite('oidc', \SocialiteProviders\OIDC\Provider::class);
         });
