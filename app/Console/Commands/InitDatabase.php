@@ -70,6 +70,15 @@ class InitDatabase extends Command
                         '--password' => $pass,
                     ])
                 );
+
+                // Grant admin to the bootstrap user (new installs only).
+                // Existing installs are covered by the is_admin migration backfill.
+                $this->components->task('Granting admin to default user', function () use ($email) {
+                    \App\Models\User::where('email', $email)
+                        ->first()
+                        ?->forceFill(['is_admin' => true])
+                        ->save();
+                });
             }
         }
 
