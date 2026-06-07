@@ -18,8 +18,14 @@ class EditUser extends EditRecord
             return true;
         }
         // Non-admins may only reach their own edit page (linked from the user menu).
+        // $parameters['record'] is the resolved Eloquent model, so use getKey().
         $record = $parameters['record'] ?? null;
-        return $record !== null && (string) $record === (string) $user?->id;
+        if ($record === null) {
+            return false;
+        }
+        $recordId = $record instanceof \Illuminate\Database\Eloquent\Model ? $record->getKey() : $record;
+
+        return (int) $recordId === (int) $user?->id;
     }
 
     protected function getHeaderActions(): array
