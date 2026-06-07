@@ -8,15 +8,19 @@ use App\Models\ProductSource;
 use App\Models\User;
 use App\Policies\ProductPolicy;
 use App\Policies\ProductSourcePolicy;
+use App\Policies\UserPolicy;
 use App\Services\Helpers\NotificationsHelper;
 use App\Services\Helpers\QueueHelper;
 use App\Services\Helpers\SettingsHelper;
+use DutchCodingCompany\FilamentSocialite\Events\Login as SocialiteLogin;
+use DutchCodingCompany\FilamentSocialite\Events\Registered as SocialiteRegistered;
 use Filament\Facades\Filament;
 use Filament\Navigation\MenuItem;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -34,12 +38,15 @@ class AppServiceProvider extends ServiceProvider
         $this->setConfigFromAppSettings();
         $this->registerAbout();
         $this->authorizePackages();
+        $this->registerOidcAuth();
+        $this->registerOidcAdminGroupSync();
     }
 
     protected function registerPolicies(): void
     {
         Gate::policy(Product::class, ProductPolicy::class);
         Gate::policy(ProductSource::class, ProductSourcePolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 
     protected function registerFilamentSettings(): void
@@ -112,5 +119,37 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewApiDocs', function (?User $user) {
             return ! is_null($user);
         });
+    }
+
+    private function registerOidcAuth(): void
+    {
+        if (empty(config('services.oidc.client_id'))) {
+            return;
+        }
+
+        Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
+            $event->extendSocialite('oidc', \SocialiteProviders\OIDC\Provider::class);
+        });
+    }
+
+    private function registerOidcAdminGroupSync(): void
+    {
+        if (empty(config('services.oidc.client_id'))) {
+            return;
+        }
+
+        $syncAdmin = function ($event) {
+            $adminGroup = config('services.oidc.admin_group');
+            if (filled($adminGroup)) {
+                $groups = (array) data_get($event->oauthUser->user, config('services.oidc.groups_claim', 'groups'), []);
+                $user = $event->socialiteUser->getUser();
+                // Never demote the bootstrap admin to prevent lock-out
+                $isAdmin = in_array($adminGroup, $groups, true) || $user->email === env('APP_USER_EMAIL');
+                $user->forceFill(['is_admin' => $isAdmin])->save();
+            }
+        };
+
+        Event::listen(SocialiteLogin::class, $syncAdmin);
+        Event::listen(SocialiteRegistered::class, $syncAdmin);
     }
 }
