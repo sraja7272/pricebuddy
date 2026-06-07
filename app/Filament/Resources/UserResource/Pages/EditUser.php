@@ -17,4 +17,11 @@ class EditUser extends EditRecord
             Actions\DeleteAction::make()->icon(Icons::Delete->value),
         ];
     }
+
+    protected function afterSave(): void
+    {
+        if (auth()->user()?->is_admin) {
+            $this->record->forceFill(['is_admin' => (bool) ($this->data['is_admin'] ?? false)])->save();
+        }
+    }
 }

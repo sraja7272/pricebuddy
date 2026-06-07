@@ -24,6 +24,9 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use DutchCodingCompany\FilamentSocialite\FilamentSocialitePlugin;
+use DutchCodingCompany\FilamentSocialite\Provider;
+use Laravel\Socialite\Contracts\User as SocialiteUserContract;
 use pxlrbt\FilamentSpotlight\SpotlightPlugin;
 use Rupadana\ApiService\ApiServicePlugin;
 
@@ -35,6 +38,39 @@ class AdminPanelProvider extends PanelProvider
 
     public function panel(Panel $panel): Panel
     {
+        $plugins = [
+            ApiServicePlugin::make(),
+            SpotlightPlugin::make(),
+            QuickCreatePlugin::make()
+                ->excludes([
+                    LogMessageResource::class,
+                ]),
+        ];
+
+        if (filled(config('services.oidc.client_id'))) {
+            $plugins[] = FilamentSocialitePlugin::make()
+                ->providers([
+                    Provider::make('oidc')
+                        ->label(env('OIDC_BUTTON_LABEL', 'Single Sign-On'))
+                        ->icon('heroicon-o-key'),
+                ])
+                ->slug('admin')
+                ->registration(true)
+                ->createUserUsing(function (string $provider, SocialiteUserContract $oauthUser, FilamentSocialitePlugin $plugin) {
+                    // Link by email: covers returning users AND the bootstrap admin.
+                    // We use firstOrNew so an existing local account with the same email
+                    // is linked rather than duplicated.
+                    $user = \App\Models\User::firstOrNew(['email' => $oauthUser->getEmail()]);
+                    if (! $user->exists) {
+                        $user->name = $oauthUser->getName() ?: $oauthUser->getEmail();
+                        $user->password = null; // OIDC-only account; no local password
+                    }
+                    $user->save();
+
+                    return $user;
+                });
+        }
+
         return $panel
             ->default()
             ->id('admin')
@@ -63,14 +99,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 // These get auto discovered, if not add manually.
             ])
-            ->plugins([
-                ApiServicePlugin::make(),
-                SpotlightPlugin::make(),
-                QuickCreatePlugin::make()
-                    ->excludes([
-                        LogMessageResource::class,
-                    ]),
-            ])
+            ->plugins($plugins)
             ->userMenuItems([
                 MenuItem::make()
                     ->label('Notifications')

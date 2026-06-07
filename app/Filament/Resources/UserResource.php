@@ -30,6 +30,11 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return (bool) auth()->user()?->is_admin;
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -52,6 +57,11 @@ class UserResource extends Resource
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context): bool => $context === 'create'),
+                        Forms\Components\Toggle::make('is_admin')
+                            ->label('Administrator')
+                            ->helperText('Grants access to user management and global application settings.')
+                            ->visible(fn () => (bool) auth()->user()?->is_admin)
+                            ->dehydrated(false), // dehydration is handled manually in page classes
                     ]),
                 self::makeFormHeading('Notification Settings'),
                 self::getEmailSettings(),

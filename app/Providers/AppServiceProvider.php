@@ -8,16 +8,21 @@ use App\Models\ProductSource;
 use App\Models\User;
 use App\Policies\ProductPolicy;
 use App\Policies\ProductSourcePolicy;
+use App\Policies\UserPolicy;
 use App\Services\Helpers\NotificationsHelper;
 use App\Services\Helpers\QueueHelper;
 use App\Services\Helpers\SettingsHelper;
+use DutchCodingCompany\FilamentSocialite\Events\Login as SocialiteLogin;
+use DutchCodingCompany\FilamentSocialite\Events\Registered as SocialiteRegistered;
 use Filament\Facades\Filament;
 use Filament\Navigation\MenuItem;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -34,12 +39,15 @@ class AppServiceProvider extends ServiceProvider
         $this->setConfigFromAppSettings();
         $this->registerAbout();
         $this->authorizePackages();
+        $this->registerOidcAuth();
+        $this->registerOidcAdminGroupSync();
     }
 
     protected function registerPolicies(): void
     {
         Gate::policy(Product::class, ProductPolicy::class);
         Gate::policy(ProductSource::class, ProductSourcePolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 
     protected function registerFilamentSettings(): void
@@ -113,4 +121,67 @@ class AppServiceProvider extends ServiceProvider
             return ! is_null($user);
         });
     }
+
+    private function registerOidcAuth(): void
+    {
+        if (empty(config('services.oidc.client_id'))) {
+            return;
+        }
+
+        $missing = array_values(array_filter([
+            empty(config('services.oidc.base_url')) ? 'OIDC_BASE_URL' : null,
+            empty(config('services.oidc.client_secret')) ? 'OIDC_CLIENT_SECRET' : null,
+        ]));
+
+        if ($missing) {
+            Log::warning(
+                'OIDC is enabled but required configuration is missing: '.implode(', ', $missing).'. OIDC login will not function.'
+            );
+
+            return;
+        }
+
+        Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
+            $event->extendSocialite('oidc', \SocialiteProviders\OIDC\Provider::class);
+        });
+    }
+
+    private function registerOidcAdminGroupSync(): void
+    {
+        if (empty(config('services.oidc.client_id'))) {
+            return;
+        }
+
+        $syncAdmin = function ($event) {
+            $adminGroup = config('services.oidc.admin_group');
+            $groupsClaim = config('services.oidc.groups_claim', 'groups');
+            $user = $event->socialiteUser->getUser();
+
+            $username = data_get($event->oauthUser->user, 'preferred_username', $event->oauthUser->getId());
+            $groups = (array) data_get($event->oauthUser->user, $groupsClaim, []);
+
+            Log::info('OIDC: login', [
+                'username' => $username,
+                'groups'   => $groups,
+            ]);
+
+            if (! filled($adminGroup)) {
+                return;
+            }
+
+            // Never demote the bootstrap admin to prevent lock-out
+            $isAdmin = in_array($adminGroup, $groups, true) || $user->email === env('APP_USER_EMAIL');
+            $user->forceFill(['is_admin' => $isAdmin])->save();
+
+            Log::info('OIDC: admin sync', [
+                'username'    => $username,
+                'admin_group' => $adminGroup,
+                'granted'     => $isAdmin,
+            ]);
+        };
+
+        Event::listen(SocialiteLogin::class, $syncAdmin);
+        Event::listen(SocialiteRegistered::class, $syncAdmin);
+    }
+
 }
