@@ -140,6 +140,12 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
+        \Illuminate\Support\Facades\Log::info('OIDC: driver registered', [
+            'base_url'    => config('services.oidc.base_url'),
+            'scopes'      => config('services.oidc.scopes'),
+            'admin_group' => config('services.oidc.admin_group') ?: '(not set)',
+        ]);
+
         Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
             $event->extendSocialite('oidc', \SocialiteProviders\OIDC\Provider::class);
         });
@@ -153,13 +159,40 @@ class AppServiceProvider extends ServiceProvider
 
         $syncAdmin = function ($event) {
             $adminGroup = config('services.oidc.admin_group');
-            if (filled($adminGroup)) {
-                $groups = (array) data_get($event->oauthUser->user, config('services.oidc.groups_claim', 'groups'), []);
-                $user = $event->socialiteUser->getUser();
-                // Never demote the bootstrap admin to prevent lock-out
-                $isAdmin = in_array($adminGroup, $groups, true) || $user->email === env('APP_USER_EMAIL');
-                $user->forceFill(['is_admin' => $isAdmin])->save();
+            $groupsClaim = config('services.oidc.groups_claim', 'groups');
+            $user = $event->socialiteUser->getUser();
+
+            \Illuminate\Support\Facades\Log::debug('OIDC: admin sync triggered', [
+                'user_email'          => $user->email,
+                'configured_admin_group' => $adminGroup ?: '(not set)',
+                'groups_claim'        => $groupsClaim,
+                'raw_oidc_payload'    => $event->oauthUser->user,
+            ]);
+
+            if (! filled($adminGroup)) {
+                \Illuminate\Support\Facades\Log::debug('OIDC: OIDC_ADMIN_GROUP not configured, skipping group sync');
+
+                return;
             }
+
+            $groups = (array) data_get($event->oauthUser->user, $groupsClaim, []);
+
+            \Illuminate\Support\Facades\Log::debug('OIDC: group membership check', [
+                'user_email'     => $user->email,
+                'found_groups'   => $groups,
+                'looking_for'    => $adminGroup,
+                'group_match'    => in_array($adminGroup, $groups, true),
+                'is_bootstrap_admin' => $user->email === env('APP_USER_EMAIL'),
+            ]);
+
+            // Never demote the bootstrap admin to prevent lock-out
+            $isAdmin = in_array($adminGroup, $groups, true) || $user->email === env('APP_USER_EMAIL');
+            $user->forceFill(['is_admin' => $isAdmin])->save();
+
+            \Illuminate\Support\Facades\Log::info('OIDC: admin status set', [
+                'user_email' => $user->email,
+                'is_admin'   => $isAdmin,
+            ]);
         };
 
         Event::listen(SocialiteLogin::class, $syncAdmin);
