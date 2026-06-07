@@ -45,6 +45,16 @@ class AppSettingsPage extends SettingsPage
 
     protected static ?int $navigationSort = 100;
 
+    public static function canAccess(): bool
+    {
+        return (bool) auth()->user()?->is_admin;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return (bool) auth()->user()?->is_admin;
+    }
+
     public function save(): void
     {
         parent::save();
