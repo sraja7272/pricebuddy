@@ -127,6 +127,19 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
+        $missing = array_values(array_filter([
+            empty(config('services.oidc.base_url')) ? 'OIDC_BASE_URL' : null,
+            empty(config('services.oidc.client_secret')) ? 'OIDC_CLIENT_SECRET' : null,
+        ]));
+
+        if ($missing) {
+            \Illuminate\Support\Facades\Log::warning(
+                'OIDC is enabled but required configuration is missing: '.implode(', ', $missing).'. OIDC login will not function.'
+            );
+
+            return;
+        }
+
         Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
             $event->extendSocialite('oidc', \SocialiteProviders\OIDC\Provider::class);
         });

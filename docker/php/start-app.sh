@@ -17,6 +17,21 @@ mkdir -p storage/framework/sessions \
     && mkdir -p storage/app/public \
     && chmod -R 777 storage
 
+# Validate OIDC configuration if partially set
+if [ -n "${OIDC_CLIENT_ID}" ]; then
+    OIDC_MISSING=()
+    [ -z "${OIDC_BASE_URL}" ] && OIDC_MISSING+=("OIDC_BASE_URL")
+    [ -z "${OIDC_CLIENT_SECRET}" ] && OIDC_MISSING+=("OIDC_CLIENT_SECRET")
+    if [ ${#OIDC_MISSING[@]} -gt 0 ]; then
+        echo "[WARNING] OIDC is enabled (OIDC_CLIENT_ID is set) but required variables are missing: ${OIDC_MISSING[*]}"
+        echo "[WARNING] OIDC login will not function until these are configured."
+    else
+        echo "[INFO] OIDC is enabled and configured."
+    fi
+else
+    echo "[INFO] OIDC is not configured (OIDC_CLIENT_ID not set). Local login only."
+fi
+
 # Setup storage and clear caches
 php artisan storage:link
 php artisan config:clear
