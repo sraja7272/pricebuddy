@@ -20,8 +20,11 @@ use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Foundation\Console\AboutCommand;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -133,14 +136,14 @@ class AppServiceProvider extends ServiceProvider
         ]));
 
         if ($missing) {
-            \Illuminate\Support\Facades\Log::warning(
+            Log::warning(
                 'OIDC is enabled but required configuration is missing: '.implode(', ', $missing).'. OIDC login will not function.'
             );
 
             return;
         }
 
-        \Illuminate\Support\Facades\Log::info('OIDC: driver registered', [
+        Log::info('OIDC: driver registered', [
             'base_url'    => config('services.oidc.base_url'),
             'scopes'      => config('services.oidc.scopes'),
             'admin_group' => config('services.oidc.admin_group') ?: '(not set)',
@@ -162,26 +165,33 @@ class AppServiceProvider extends ServiceProvider
             $groupsClaim = config('services.oidc.groups_claim', 'groups');
             $user = $event->socialiteUser->getUser();
 
-            \Illuminate\Support\Facades\Log::debug('OIDC: admin sync triggered', [
-                'user_email'          => $user->email,
+            // The ID token JWT often omits non-standard claims like groups — providers
+            // frequently put them only on the userinfo endpoint. Fetch userinfo explicitly
+            // so we always see the full profile regardless of what the IdP puts in the JWT.
+            $userInfo = $this->fetchOidcUserInfo($event->oauthUser->token);
+            $rawData = $userInfo ?? $event->oauthUser->user;
+
+            Log::debug('OIDC: admin sync triggered', [
+                'user_email'             => $user->email,
                 'configured_admin_group' => $adminGroup ?: '(not set)',
-                'groups_claim'        => $groupsClaim,
-                'raw_oidc_payload'    => $event->oauthUser->user,
+                'groups_claim'           => $groupsClaim,
+                'raw_oidc_payload'       => $rawData,
+                'source'                 => $userInfo ? 'userinfo_endpoint' : 'id_token',
             ]);
 
             if (! filled($adminGroup)) {
-                \Illuminate\Support\Facades\Log::debug('OIDC: OIDC_ADMIN_GROUP not configured, skipping group sync');
+                Log::debug('OIDC: OIDC_ADMIN_GROUP not configured, skipping group sync');
 
                 return;
             }
 
-            $groups = (array) data_get($event->oauthUser->user, $groupsClaim, []);
+            $groups = (array) data_get($rawData, $groupsClaim, []);
 
-            \Illuminate\Support\Facades\Log::debug('OIDC: group membership check', [
-                'user_email'     => $user->email,
-                'found_groups'   => $groups,
-                'looking_for'    => $adminGroup,
-                'group_match'    => in_array($adminGroup, $groups, true),
+            Log::debug('OIDC: group membership check', [
+                'user_email'         => $user->email,
+                'found_groups'       => $groups,
+                'looking_for'        => $adminGroup,
+                'group_match'        => in_array($adminGroup, $groups, true),
                 'is_bootstrap_admin' => $user->email === env('APP_USER_EMAIL'),
             ]);
 
@@ -189,7 +199,7 @@ class AppServiceProvider extends ServiceProvider
             $isAdmin = in_array($adminGroup, $groups, true) || $user->email === env('APP_USER_EMAIL');
             $user->forceFill(['is_admin' => $isAdmin])->save();
 
-            \Illuminate\Support\Facades\Log::info('OIDC: admin status set', [
+            Log::info('OIDC: admin status set', [
                 'user_email' => $user->email,
                 'is_admin'   => $isAdmin,
             ]);
@@ -197,5 +207,34 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen(SocialiteLogin::class, $syncAdmin);
         Event::listen(SocialiteRegistered::class, $syncAdmin);
+    }
+
+    private function fetchOidcUserInfo(string $accessToken): ?array
+    {
+        try {
+            $baseUrl = rtrim(config('services.oidc.base_url'), '/');
+
+            $userinfoUrl = Cache::remember(
+                'oidc_userinfo_url_'.md5($baseUrl),
+                3600,
+                function () use ($baseUrl) {
+                    $discovery = Http::get($baseUrl.'/.well-known/openid-configuration')->json();
+
+                    return $discovery['userinfo_endpoint'] ?? null;
+                }
+            );
+
+            if (! $userinfoUrl) {
+                Log::warning('OIDC: userinfo_endpoint not found in discovery document');
+
+                return null;
+            }
+
+            return Http::withToken($accessToken)->get($userinfoUrl)->json();
+        } catch (\Exception $e) {
+            Log::warning('OIDC: failed to fetch userinfo endpoint', ['error' => $e->getMessage()]);
+
+            return null;
+        }
     }
 }
