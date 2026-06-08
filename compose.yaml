@@ -21,6 +21,13 @@ services:
       ASSET_URL: ${APP_URL}
       APP_USER_EMAIL: ${APP_USER_EMAIL}               # Only used for seeding the database
       APP_USER_PASSWORD: ${APP_USER_PASSWORD}         # Only used for seeding the database
+      # OIDC / SSO — optional, leave unset to use local login only
+      OIDC_BASE_URL: ${OIDC_BASE_URL}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI}
+      OIDC_ADMIN_GROUP: ${OIDC_ADMIN_GROUP}
+      OIDC_SCOPES: "openid profile email groups"
     volumes:
     - /data/price-tracker/storage:/app/storage
     depends_on:
