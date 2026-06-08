@@ -280,7 +280,10 @@ class ProductResource extends Resource
                                 ->badge()
                                 ->grow(false)
                                 ->extraAttributes(['class' => 'mt-1'])
-                                ->state(function (Product $record): string {
+                                ->state(function (?Product $record): string {
+                                    if ($record === null) {
+                                        return '';
+                                    }
                                     if (auth()->id() !== $record->user_id) {
                                         return 'Shared with you';
                                     }
@@ -292,7 +295,8 @@ class ProductResource extends Resource
                                     'Shared' => 'success',
                                     default => '',
                                 })
-                                ->visible(fn (Product $record): bool => auth()->id() !== $record->user_id
+                                ->visible(fn (?Product $record): bool => $record === null
+                                    || auth()->id() !== $record->user_id
                                     || $record->sharedWith->isNotEmpty()),
                         ]),
                     ])->extraAttributes(['class' => 'max-w-md mb-2']),

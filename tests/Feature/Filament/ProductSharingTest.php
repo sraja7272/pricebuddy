@@ -75,7 +75,8 @@ class ProductSharingTest extends TestCase
 
         $this->actingAs($this->recipient);
 
-        $this->get(ProductResource::getUrl('view', ['record' => $product]))->assertOk();
+        Livewire::test(ViewProduct::class, ['record' => $product->getKey()])
+            ->assertSuccessful();
     }
 
     public function test_stranger_gets_403_on_view(): void
