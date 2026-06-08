@@ -7,28 +7,28 @@ services:
     ports:
     - 7242:80
     environment:
-    DB_HOST: db
-    DB_DATABASE: pricebuddy
-    SCRAPER_BASE_URL: http://scraper:3000
-    SEARXNG_URL: http://searxng:8080
-    FORCE_HTTPS: false
-    TRUSTED_PROXIES: "*"
-    # Fill out the following in Komodo
-    APP_KEY: ${APP_KEY}
-    DB_USERNAME: ${DB_USERNAME}
-    DB_PASSWORD: ${DB_PASSWORD}
-    APP_URL: ${APP_URL}
-    ASSET_URL: ${APP_URL}
-    APP_USER_EMAIL: ${APP_USER_EMAIL}               # Only used for seeding the database
-    APP_USER_PASSWORD: ${APP_USER_PASSWORD}         # Only used for seeding the database
+      DB_HOST: db
+      DB_DATABASE: pricebuddy
+      SCRAPER_BASE_URL: http://scraper:3000
+      SEARXNG_URL: http://searxng:8080
+      FORCE_HTTPS: false
+      TRUSTED_PROXIES: "*"
+      # Fill out the following in Komodo
+      APP_KEY: ${APP_KEY}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      APP_URL: ${APP_URL}
+      ASSET_URL: ${APP_URL}
+      APP_USER_EMAIL: ${APP_USER_EMAIL}               # Only used for seeding the database
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD}         # Only used for seeding the database
     volumes:
     - /data/price-tracker/storage:/app/storage
     depends_on:
       db:
         condition: service_healthy
     logging:
-    driver: splunk
-    options:
+      driver: splunk
+      options:
         splunk-url: "https://splunk-collector.raja-house.com"
         splunk-token: "${SPLUNK_TOKEN}" # Defined in Komodo Compose file environment variables
         splunk-index: "docker"
