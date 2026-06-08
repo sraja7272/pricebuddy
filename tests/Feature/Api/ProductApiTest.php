@@ -265,6 +265,154 @@ class ProductApiTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id]);
     }
 
+    // -----------------------------------------------------------------------
+    // Sharing — API access control
+    // -----------------------------------------------------------------------
+
+    public function test_shared_product_appears_in_recipient_api_list(): void
+    {
+        $owner = User::factory()->create();
+        $product = Product::factory()->create(['user_id' => $owner->id]);
+        $product->sharedWith()->attach($this->user);
+
+        $response = $this->getJson('/api/products');
+
+        $response->assertSuccessful();
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertContains($product->id, $ids);
+    }
+
+    public function test_stranger_cannot_see_shared_product_in_api_list(): void
+    {
+        $owner = User::factory()->create();
+        $recipient = User::factory()->create();
+        $product = Product::factory()->create(['user_id' => $owner->id]);
+        $product->sharedWith()->attach($recipient);
+
+        // this->user is the stranger (not the owner, not the recipient)
+        $response = $this->getJson('/api/products');
+
+        $response->assertSuccessful();
+        $ids = collect($response->json('data'))->pluck('id')->all();
+        $this->assertNotContains($product->id, $ids);
+    }
+
+    public function test_recipient_can_get_shared_product_via_api(): void
+    {
+        $owner = User::factory()->create();
+        $product = Product::factory()->create(['user_id' => $owner->id]);
+        $product->sharedWith()->attach($this->user);
+
+        $response = $this->getJson("/api/products/{$product->id}");
+
+        $response->assertSuccessful()
+            ->assertJson(['data' => ['id' => $product->id]]);
+    }
+
+    public function test_stranger_cannot_get_shared_product_via_api(): void
+    {
+        $owner = User::factory()->create();
+        $recipient = User::factory()->create();
+        $product = Product::factory()->create(['user_id' => $owner->id]);
+        $product->sharedWith()->attach($recipient);
+
+        // this->user is neither the owner nor the recipient
+        $response = $this->getJson("/api/products/{$product->id}");
+
+        $response->assertNotFound();
+    }
+
+    public function test_recipient_can_update_shared_product_via_api(): void
+    {
+        $owner = User::factory()->create();
+        $product = Product::factory()->create(['user_id' => $owner->id, 'title' => 'Original']);
+        $product->sharedWith()->attach($this->user);
+
+        $response = $this->putJson("/api/products/{$product->id}", [
+            'title' => 'Updated by recipient',
+            'image' => $product->image,
+            'status' => $product->status->value,
+            'notify_price' => $product->notify_price,
+            'notify_percent' => $product->notify_percent,
+            'favourite' => $product->favourite,
+            'only_official' => $product->only_official,
+            'weight' => $product->weight ?? 0,
+            'current_price' => $product->current_price ?? 0,
+            'price_cache' => $product->price_cache ?: [],
+            'ignored_urls' => $product->ignored_urls ?: [],
+        ]);
+
+        $response->assertSuccessful();
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'title' => 'Updated by recipient']);
+        // Ownership must not change — product still belongs to the original owner.
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'user_id' => $owner->id]);
+    }
+
+    public function test_stranger_cannot_update_shared_product_via_api(): void
+    {
+        $owner = User::factory()->create();
+        $recipient = User::factory()->create();
+        $product = Product::factory()->create(['user_id' => $owner->id, 'title' => 'Original']);
+        $product->sharedWith()->attach($recipient);
+
+        // this->user is the stranger
+        $response = $this->putJson("/api/products/{$product->id}", [
+            'title' => 'Hacked',
+            'image' => $product->image,
+            'status' => $product->status->value,
+            'notify_price' => $product->notify_price,
+            'notify_percent' => $product->notify_percent,
+            'favourite' => $product->favourite,
+            'only_official' => $product->only_official,
+            'weight' => $product->weight ?? 0,
+            'current_price' => $product->current_price ?? 0,
+            'price_cache' => $product->price_cache ?: [],
+            'ignored_urls' => $product->ignored_urls ?: [],
+        ]);
+
+        $response->assertNotFound();
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'title' => 'Original']);
+    }
+
+    public function test_recipient_cannot_delete_shared_product_via_api(): void
+    {
+        $owner = User::factory()->create();
+        $product = Product::factory()->create(['user_id' => $owner->id]);
+        $product->sharedWith()->attach($this->user);
+
+        // Recipient is this->user; delete handler uses owner-only filter.
+        $response = $this->deleteJson("/api/products/{$product->id}");
+
+        $response->assertNotFound();
+        $this->assertDatabaseHas('products', ['id' => $product->id]);
+    }
+
+    public function test_recipient_cannot_seize_ownership_via_api_update(): void
+    {
+        $owner = User::factory()->create();
+        $product = Product::factory()->create(['user_id' => $owner->id]);
+        $product->sharedWith()->attach($this->user);
+
+        $this->putJson("/api/products/{$product->id}", [
+            'title' => $product->title,
+            'image' => $product->image,
+            'status' => $product->status->value,
+            'notify_price' => $product->notify_price,
+            'notify_percent' => $product->notify_percent,
+            'favourite' => $product->favourite,
+            'only_official' => $product->only_official,
+            'weight' => $product->weight ?? 0,
+            'current_price' => $product->current_price ?? 0,
+            'price_cache' => $product->price_cache ?: [],
+            'ignored_urls' => $product->ignored_urls ?: [],
+            'user_id' => $this->user->id, // Attempting to seize ownership
+        ])->assertSuccessful();
+
+        // user_id must remain unchanged
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'user_id' => $owner->id]);
+        $this->assertDatabaseMissing('products', ['id' => $product->id, 'user_id' => $this->user->id]);
+    }
+
     public function test_can_filter_products_by_status(): void
     {
         Product::factory()->create([
