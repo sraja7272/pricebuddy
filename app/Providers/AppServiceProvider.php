@@ -45,12 +45,18 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // Log after forceHttps() so logout_url reflects the result
+        try {
+            $logoutUrl = route('filament.admin.auth.logout');
+        } catch (\Throwable) {
+            $logoutUrl = '(route not yet registered)';
+        }
+
         Log::info('App boot: HTTPS config', [
             'TRUSTED_PROXIES' => $trustedProxies ?: '(not set)',
             'FORCE_HTTPS'     => $forceHttpsEnv  ?: '(not set)',
             'app_url'         => $appUrl,
             'forcing_https'   => $forcingHttps,
-            'logout_url'      => route('filament.admin.auth.logout'),
+            'logout_url'      => $logoutUrl,
         ]);
 
         $this->registerPolicies();
