@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\HtmlString;
 
@@ -35,6 +36,11 @@ class UserResource extends Resource
         return (bool) auth()->user()?->is_admin;
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with('socialiteUser');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -51,12 +57,17 @@ class UserResource extends Resource
                             ->email()
                             ->unique(ignoreRecord: true)
                             ->required(),
+                        Forms\Components\Placeholder::make('auth_type')
+                            ->label('Authentication')
+                            ->content(fn (?User $record): string => $record?->socialiteUser ? 'SSO / OIDC' : 'Local account')
+                            ->visibleOn('edit'),
                         Forms\Components\TextInput::make('password')
                             ->label('Password')
                             ->password()
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                             ->dehydrated(fn ($state) => filled($state))
-                            ->required(fn (string $context): bool => $context === 'create'),
+                            ->required(fn (string $context): bool => $context === 'create')
+                            ->visible(fn (string $context, ?User $record): bool => $context === 'create' || $record?->socialiteUser === null),
                         Forms\Components\Toggle::make('is_admin')
                             ->label('Administrator')
                             ->helperText('Grants access to user management and global application settings.')
@@ -84,6 +95,12 @@ class UserResource extends Resource
                         ->searchable(),
                     Tables\Columns\TextColumn::make('email')
                         ->searchable(),
+                    Tables\Columns\TextColumn::make('auth_type')
+                        ->label('Auth')
+                        ->badge()
+                        ->grow(false)
+                        ->state(fn (User $record): string => $record->socialiteUser ? 'SSO' : 'Local')
+                        ->color(fn (string $state): string => $state === 'SSO' ? 'info' : 'gray'),
                 ])->from('sm'),
             ])
             ->paginated(AdminPanelProvider::DEFAULT_PAGINATION)

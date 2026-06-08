@@ -8,7 +8,9 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Filament\Panel\Concerns\HasNotifications;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use DutchCodingCompany\FilamentSocialite\Models\SocialiteUser;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -59,6 +61,16 @@ class User extends Authenticatable implements FilamentUser
             'settings' => 'array',
             'is_admin' => 'boolean',
         ];
+    }
+
+    public function socialiteUser(): HasOne
+    {
+        return $this->hasOne(SocialiteUser::class);
+    }
+
+    public function isOidcUser(): bool
+    {
+        return $this->socialiteUser()->exists();
     }
 
     public function stores(): HasMany
