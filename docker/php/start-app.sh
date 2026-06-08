@@ -6,7 +6,15 @@ if [ ! -f ".env" ] ||  ! grep -q . ".env" ; then
     php artisan key:generate --force
 fi
 
-# Debugging
+# Startup diagnostics
+GIT_COMMIT=$(git -C /app rev-parse --short HEAD 2>/dev/null || echo "unknown")
+echo "[STARTUP] Git commit: ${GIT_COMMIT}"
+echo "[STARTUP] APP_URL: ${APP_URL:-(not set)}"
+echo "[STARTUP] TRUSTED_PROXIES: ${TRUSTED_PROXIES:-(not set)}"
+echo "[STARTUP] FORCE_HTTPS: ${FORCE_HTTPS:-(not set)}"
+echo "[STARTUP] DB_HOST: ${DB_HOST:-(not set)}"
+
+# Full env dump (remove once HTTPS issue is resolved)
 printenv
 
 # Ensure storage exists
