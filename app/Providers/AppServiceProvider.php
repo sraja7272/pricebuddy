@@ -35,29 +35,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $trustedProxies = getenv('TRUSTED_PROXIES');
-        $forceHttpsEnv  = getenv('FORCE_HTTPS');
-        $appUrl         = config('app.url', '');
-        $forcingHttps   = filled($trustedProxies) || $forceHttpsEnv || str_starts_with($appUrl, 'https://');
-
-        if ($forcingHttps) {
+        if (filled(getenv('TRUSTED_PROXIES')) || getenv('FORCE_HTTPS') || str_starts_with(config('app.url', ''), 'https://')) {
             URL::forceHttps();
         }
-
-        // Log after forceHttps() so logout_url reflects the result
-        try {
-            $logoutUrl = route('filament.admin.auth.logout');
-        } catch (\Throwable) {
-            $logoutUrl = '(route not yet registered)';
-        }
-
-        Log::info('App boot: HTTPS config', [
-            'TRUSTED_PROXIES' => $trustedProxies ?: '(not set)',
-            'FORCE_HTTPS'     => $forceHttpsEnv  ?: '(not set)',
-            'app_url'         => $appUrl,
-            'forcing_https'   => $forcingHttps,
-            'logout_url'      => $logoutUrl,
-        ]);
 
         $this->registerPolicies();
         $this->registerFilamentSettings();
