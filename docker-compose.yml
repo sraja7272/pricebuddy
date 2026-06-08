@@ -24,7 +24,7 @@ services:
     volumes:
     - /data/price-tracker/storage:/app/storage
     depends_on:
-    db:
+      db:
         condition: service_healthy
     logging:
     driver: splunk
