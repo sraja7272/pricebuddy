@@ -13,6 +13,7 @@ services:
       SEARXNG_URL: http://searxng:8080
       FORCE_HTTPS: false
       TRUSTED_PROXIES: "*"
+      OIDC_SCOPES: "openid profile email groups"
       # Fill out the following in Komodo
       APP_KEY: ${APP_KEY}
       DB_USERNAME: ${DB_USERNAME}
@@ -27,7 +28,6 @@ services:
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI}
       OIDC_ADMIN_GROUP: ${OIDC_ADMIN_GROUP}
-      OIDC_SCOPES: "openid profile email groups"
     volumes:
     - /data/price-tracker/storage:/app/storage
     depends_on:
