@@ -27,9 +27,9 @@ class PriceCreatedListener
         }
 
         try {
-            // Notify the user if the price is within the range.
+            // Notify all users with access if the price is within the range.
             if ($product->shouldNotifyOnPrice($event->price) && $url->shouldNotifyOnPrice($event->price)) {
-                $product->user?->notify(new PriceAlertNotification($url));
+                $product->usersWithAccess()->each(fn ($user) => $user->notify(new PriceAlertNotification($url)));
                 $event->price->update(['notified' => true]);
             }
         } catch (Exception $e) {

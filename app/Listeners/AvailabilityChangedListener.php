@@ -30,7 +30,7 @@ class AvailabilityChangedListener
         }
 
         try {
-            $product->user?->notify(new StockAlertNotification($url));
+            $product->usersWithAccess()->each(fn ($user) => $user->notify(new StockAlertNotification($url)));
         } catch (Exception $e) {
             logger()->error('Error sending back-in-stock notification: '.$e->getMessage(), [
                 'product' => $product->title,

@@ -34,7 +34,7 @@ class UpdateHandler extends Handlers
     {
         $id = $request->route('id');
 
-        $model = static::getModel()::where('id', $id)->where('user_id', auth()->id())->first();
+        $model = static::getModel()::currentUser()->where('id', $id)->first();
 
         if (! $model) {
             return static::sendNotFoundResponse();

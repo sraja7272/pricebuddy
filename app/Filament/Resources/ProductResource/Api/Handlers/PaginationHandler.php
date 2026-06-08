@@ -75,7 +75,7 @@ class PaginationHandler extends Handlers
      */
     public function handler()
     {
-        $query = static::getEloquentQuery()->where('user_id', auth()->id());
+        $query = static::getEloquentQuery()->currentUser();
         $perPage = min(max((int) $this->getPerPage(), 1), 100);
 
         $query = QueryBuilder::for($query)

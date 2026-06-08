@@ -9,6 +9,7 @@ use Filament\Panel;
 use Filament\Panel\Concerns\HasNotifications;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use DutchCodingCompany\FilamentSocialite\Models\SocialiteUser;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -81,6 +82,14 @@ class User extends Authenticatable implements FilamentUser
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Products that have been explicitly shared with this user (not owned by them).
+     */
+    public function sharedProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class)->withTimestamps();
     }
 
     /**
