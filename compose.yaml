@@ -11,7 +11,7 @@ services:
       DB_DATABASE: pricebuddy
       SCRAPER_BASE_URL: http://scraper:3000
       SEARXNG_URL: http://searxng:8080
-      FORCE_HTTPS: true
+      FORCE_HTTPS: "true"
       TRUSTED_PROXIES: "*"
       OIDC_SCOPES: "openid profile email groups"
       # Fill out the following in Komodo
