@@ -28,6 +28,7 @@ services:
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI}
       OIDC_ADMIN_GROUP: ${OIDC_ADMIN_GROUP}
+      DISABLE_LOCAL_LOGIN: ${DISABLE_LOCAL_LOGIN}
     volumes:
     - /data/price-tracker/storage:/app/storage
     depends_on:
