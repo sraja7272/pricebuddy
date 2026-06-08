@@ -13,6 +13,7 @@ services:
       SEARXNG_URL: http://searxng:8080
       FORCE_HTTPS: false
       TRUSTED_PROXIES: "*"
+      OIDC_SCOPES: "openid profile email groups"
       # Fill out the following in Komodo
       APP_KEY: ${APP_KEY}
       DB_USERNAME: ${DB_USERNAME}
@@ -21,6 +22,13 @@ services:
       ASSET_URL: ${APP_URL}
       APP_USER_EMAIL: ${APP_USER_EMAIL}               # Only used for seeding the database
       APP_USER_PASSWORD: ${APP_USER_PASSWORD}         # Only used for seeding the database
+      # OIDC / SSO — optional, leave unset to use local login only
+      OIDC_BASE_URL: ${OIDC_BASE_URL}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI}
+      OIDC_ADMIN_GROUP: ${OIDC_ADMIN_GROUP}
+      DISABLE_LOCAL_LOGIN: ${DISABLE_LOCAL_LOGIN}
     volumes:
     - /data/price-tracker/storage:/app/storage
     depends_on:
