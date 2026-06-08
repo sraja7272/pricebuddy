@@ -12,6 +12,18 @@ class Login extends BaseLogin
 {
     protected static string $layout = 'filament.layouts.auth';
 
+    public function mount(): void
+    {
+        if ($this->isLocalLoginDisabled()
+            && \Illuminate\Support\Facades\Route::has('socialite.filament.admin.oauth.redirect')) {
+            redirect()->to(route('socialite.filament.admin.oauth.redirect', ['provider' => 'oidc']));
+
+            return;
+        }
+
+        parent::mount();
+    }
+
     public function form(Form $form): Form
     {
         if ($this->isLocalLoginDisabled()) {
