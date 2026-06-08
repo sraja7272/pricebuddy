@@ -14,6 +14,8 @@ class ProductController extends Controller
 {
     public function fetch(Product $product): RedirectResponse
     {
+        $this->authorize('view', $product);
+
         try {
             $product->updatePrices();
 

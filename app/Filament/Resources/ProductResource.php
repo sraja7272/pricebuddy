@@ -5,8 +5,10 @@ namespace App\Filament\Resources;
 use App\Enums\Icons;
 use App\Enums\Statuses;
 use App\Filament\Resources\ProductResource\Actions\FetchBulkAction;
+use App\Filament\Resources\ProductResource\Actions\LeaveShareAction;
 use App\Filament\Resources\ProductResource\Actions\PauseBulkAction;
 use App\Filament\Resources\ProductResource\Actions\ResumeBulkAction;
+use App\Filament\Resources\ProductResource\Actions\ShareProductAction;
 use App\Filament\Resources\ProductResource\Api\Transformers\ProductTransformer;
 use App\Filament\Resources\ProductResource\Columns\ProductCardColumn;
 use App\Filament\Resources\ProductResource\Pages;
@@ -84,7 +86,7 @@ class ProductResource extends Resource
             $components[] = Select::make('product_id')
                 ->label('Existing product')
                 ->searchable(['title'])
-                ->getSearchResultsUsing(fn (string $search): array => auth()->user()->products()->where('title', 'like', "%{$search}%")
+                ->getSearchResultsUsing(fn (string $search): array => Product::query()->currentUser()->where('title', 'like', "%{$search}%")
                     ->limit(50)->pluck('title', 'id')
                     ->toArray()
                 )
@@ -151,6 +153,8 @@ class ProductResource extends Resource
                     ->searchable()
                     ->preload()
                     ->native(false)
+                    ->disabled(fn (?Product $record): bool => $record !== null && auth()->id() !== $record->user_id)
+                    ->dehydrated(fn (?Product $record): bool => $record === null || auth()->id() === $record->user_id)
                     ->createOptionForm([
                         TextInput::make('name')
                             ->label('Tag name')
@@ -270,6 +274,30 @@ class ProductResource extends Resource
                                 ->url(null)
                                 ->grow(false)
                                 ->extraAttributes(['class' => 'mt-2 text-xs']),
+
+                            TextColumn::make('sharing_badge')
+                                ->label('')
+                                ->badge()
+                                ->grow(false)
+                                ->extraAttributes(['class' => 'mt-1'])
+                                ->state(function (?Product $record): string {
+                                    if ($record === null) {
+                                        return '';
+                                    }
+                                    if (auth()->id() !== $record->user_id) {
+                                        return 'Shared with you';
+                                    }
+
+                                    return $record->sharedWith->isNotEmpty() ? 'Shared' : '';
+                                })
+                                ->color(fn (string $state): string => match ($state) {
+                                    'Shared with you' => 'info',
+                                    'Shared' => 'success',
+                                    default => '',
+                                })
+                                ->visible(fn (?Product $record): bool => $record === null
+                                    || auth()->id() !== $record->user_id
+                                    || $record->sharedWith->isNotEmpty()),
                         ]),
                     ])->extraAttributes(['class' => 'max-w-md mb-2']),
 
@@ -311,6 +339,8 @@ class ProductResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->actions([
                 Tables\Actions\EditAction::make(),
+                ShareProductAction::make(),
+                LeaveShareAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -321,7 +351,7 @@ class ProductResource extends Resource
                 ]),
             ])
             ->modifyQueryUsing(function (Builder $query) {
-                $query->currentUser()->with(['tags']);
+                $query->currentUser()->with(['tags', 'sharedWith']);
             })
             ->recordUrl(null);
     }
@@ -345,7 +375,7 @@ class ProductResource extends Resource
 
     public static function getGlobalSearchEloquentQuery(): Builder
     {
-        return parent::getGlobalSearchEloquentQuery()->where('user_id', auth()->id());
+        return parent::getGlobalSearchEloquentQuery()->currentUser();
     }
 
     protected static function getAggregateTableColumn(string $method): TextColumn

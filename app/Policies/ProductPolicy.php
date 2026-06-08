@@ -20,7 +20,7 @@ class ProductPolicy
      */
     public function view(User $user, Product $product): bool
     {
-        return $this->userOwnsProduct($user, $product);
+        return $this->userCanAccess($user, $product);
     }
 
     /**
@@ -35,6 +35,14 @@ class ProductPolicy
      * Determine whether the user can update the model.
      */
     public function update(User $user, Product $product): bool
+    {
+        return $this->userCanAccess($user, $product);
+    }
+
+    /**
+     * Determine whether the user can manage the product's share list.
+     */
+    public function share(User $user, Product $product): bool
     {
         return $this->userOwnsProduct($user, $product);
     }
@@ -52,7 +60,7 @@ class ProductPolicy
      */
     public function restore(User $user, Product $product): bool
     {
-        return $this->userOwnsProduct($user, $product);
+        return $this->userCanAccess($user, $product);
     }
 
     /**
@@ -61,6 +69,15 @@ class ProductPolicy
     public function forceDelete(User $user, Product $product): bool
     {
         return $this->userOwnsProduct($user, $product);
+    }
+
+    /**
+     * Owner or someone the product has been explicitly shared with.
+     */
+    protected function userCanAccess(User $user, Product $product): bool
+    {
+        return $this->userOwnsProduct($user, $product)
+            || $product->sharedWith()->whereKey($user->getKey())->exists();
     }
 
     protected function userOwnsProduct(User $user, Product $product): bool

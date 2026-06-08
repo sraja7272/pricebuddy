@@ -26,7 +26,7 @@ class DetailHandler extends Handlers
     {
         $id = $request->route('id');
 
-        $query = static::getEloquentQuery()->where('user_id', auth()->id());
+        $query = static::getEloquentQuery()->currentUser();
 
         $query = QueryBuilder::for(
             $query->where(static::getKeyName(), $id)

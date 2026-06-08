@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
@@ -170,6 +171,27 @@ class Product extends Model
         return $this->morphToMany(Tag::class, 'taggable');
     }
 
+    /**
+     * Users this product has been explicitly shared with (excludes the owner).
+     */
+    public function sharedWith(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)->withTimestamps();
+    }
+
+    /**
+     * Everyone who has access: the owner plus anyone the product is shared with.
+     *
+     * @return Collection<User>
+     */
+    public function usersWithAccess(): Collection
+    {
+        return collect([$this->user])->filter()
+            ->merge($this->sharedWith)
+            ->unique('id')
+            ->values();
+    }
+
     /***************************************************
      * Scopes.
      **************************************************/
@@ -191,11 +213,15 @@ class Product extends Model
     }
 
     /**
-     * Scope to only current user.
+     * Scope to products owned by or shared with the current user.
      */
     public function scopeCurrentUser(EloquentBuilder $query): EloquentBuilder
     {
-        return $query->where('user_id', auth()->id());
+        $userId = auth()->id();
+
+        return $query->where(fn ($q) => $q
+            ->where('user_id', $userId)
+            ->orWhereHas('sharedWith', fn ($sq) => $sq->whereKey($userId)));
     }
 
     /**
