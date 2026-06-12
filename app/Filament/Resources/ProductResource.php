@@ -216,6 +216,7 @@ class ProductResource extends Resource
                     ->label('Notify when back in stock')
                     ->hintIcon(Icons::Help->value, 'Get notified when a tracked url for this product becomes available again after being out of stock')
                     ->columnSpanFull(),
+
             ])
                 ->columns(2)
                 ->description('Notification settings'),
