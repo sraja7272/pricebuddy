@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Enums\NotificationMethods;
+use App\Enums\Role;
 use App\Models\Product;
 use App\Models\ProductSource;
 use App\Models\User;
@@ -176,7 +177,7 @@ class AppServiceProvider extends ServiceProvider
 
             // Never demote the bootstrap admin to prevent lock-out
             $isAdmin = in_array($adminGroup, $groups, true) || $user->email === env('APP_USER_EMAIL');
-            $user->forceFill(['is_admin' => $isAdmin])->save();
+            $user->forceFill(['role' => $isAdmin ? Role::Admin : Role::User])->save();
 
             Log::info('OIDC: admin sync', [
                 'username'    => $username,

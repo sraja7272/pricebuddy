@@ -4,12 +4,14 @@ namespace App\Filament\Resources;
 
 use App\Enums\Icons;
 use App\Enums\NotificationMethods;
+use App\Enums\Role;
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Traits\FormHelperTrait;
 use App\Models\User;
 use App\Providers\Filament\AdminPanelProvider;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\FontWeight;
@@ -31,9 +33,32 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
+    /**
+     * Allow any authenticated user to reach the resource's routes so a non-admin
+     * can edit their OWN record via the "Account settings" link. Per-page checks
+     * govern actual access: the list page requires viewAny (admin), create requires
+     * create (admin), and edit requires update (admin or self).
+     */
+    public static function canAccess(): bool
+    {
+        return (bool) auth()->user();
+    }
+
+    /**
+     * Hide the Users nav item from non-admins (canAccess is intentionally broad above).
+     */
     public static function shouldRegisterNavigation(): bool
     {
-        return (bool) auth()->user()?->is_admin;
+        return static::canViewAny();
+    }
+
+    /**
+     * Restrict global search of users to admins (defense-in-depth, since
+     * canAccess() is intentionally broad to permit self-edit).
+     */
+    public static function canGloballySearch(): bool
+    {
+        return static::canViewAny();
     }
 
     public static function getEloquentQuery(): Builder
@@ -68,11 +93,12 @@ class UserResource extends Resource
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context): bool => $context === 'create')
                             ->visible(fn (string $context, ?User $record): bool => $context === 'create' || $record?->socialiteUser === null),
-                        Forms\Components\Toggle::make('is_admin')
-                            ->label('Administrator')
-                            ->helperText('Grants access to user management and global application settings.')
-                            ->visible(fn () => (bool) auth()->user()?->is_admin)
-                            ->dehydrated(false), // dehydration is handled manually in page classes
+                        Select::make('role')
+                            ->label('Role')
+                            ->options(Role::class)
+                            ->default(Role::User)
+                            ->required()
+                            ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false),
                     ]),
                 self::makeFormHeading('Notification Settings'),
                 self::getEmailSettings(),

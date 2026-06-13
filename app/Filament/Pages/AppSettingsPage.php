@@ -60,12 +60,12 @@ class AppSettingsPage extends SettingsPage
 
     public static function canAccess(): bool
     {
-        return (bool) auth()->user()?->is_admin;
+        return auth()->user()?->isAdmin() ?? false;
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return (bool) auth()->user()?->is_admin;
+        return auth()->user()?->isAdmin() ?? false;
     }
 
     /**
@@ -244,6 +244,18 @@ class AppSettingsPage extends SettingsPage
                     ->label('Max scrape attempts')
                     ->hintIcon(Icons::Help->value, 'How many times to attempt to scrape a page before giving up')
                     ->numeric()
+                    ->minValue(1)
+                    ->required(),
+                TextInput::make('scrape_retry_max_attempts')
+                    ->label('Max scrape attempts (incl. retries)')
+                    ->hintIcon(Icons::Help->value, 'Total scrape attempts for a failed URL, including the original. Set to 1 to disable delayed retries.')
+                    ->integer()
+                    ->minValue(1)
+                    ->required(),
+                TextInput::make('scrape_retry_delay_minutes')
+                    ->label('Minutes between retry attempts')
+                    ->hintIcon(Icons::Help->value, 'How long to wait before retrying a failed URL scrape')
+                    ->integer()
                     ->minValue(1)
                     ->required(),
             ])->columns(2),
