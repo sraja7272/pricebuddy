@@ -2,49 +2,68 @@
 
 namespace App\Policies;
 
+use App\Enums\Role;
 use App\Models\User;
 
 class UserPolicy
 {
-    /** Only admins can list all users. */
+    /**
+     * Determine whether the user can view the list of users.
+     */
     public function viewAny(User $user): bool
     {
-        return $user->is_admin;
+        return $user->isAdmin();
     }
 
-    /** Admins can view any user; users can view their own profile. */
+    /**
+     * Determine whether the user can view the model.
+     */
     public function view(User $user, User $model): bool
     {
-        return $user->is_admin || $user->id === $model->id;
+        return $user->isAdmin() || $user->is($model);
     }
 
-    /** Only admins can create new users. */
+    /**
+     * Determine whether the user can create users.
+     */
     public function create(User $user): bool
     {
-        return $user->is_admin;
+        return $user->isAdmin();
     }
 
-    /** Admins can edit any user; users can edit their own profile. */
+    /**
+     * Determine whether the user can update the model.
+     */
     public function update(User $user, User $model): bool
     {
-        return $user->is_admin || $user->id === $model->id;
+        return $user->isAdmin() || $user->is($model);
     }
 
-    /** Only admins can delete users. */
+    /**
+     * Determine whether the user can delete the model.
+     */
     public function delete(User $user, User $model): bool
     {
-        return $user->is_admin;
+        if ($user->is($model)) {
+            return false;
+        }
+
+        if ($model->isAdmin() && User::where('role', Role::Admin)->count() <= 1) {
+            return false;
+        }
+
+        return $user->isAdmin();
     }
 
     /** Only admins can restore users. */
     public function restore(User $user, User $model): bool
     {
-        return $user->is_admin;
+        return $user->isAdmin();
     }
 
     /** Only admins can force-delete users. */
     public function forceDelete(User $user, User $model): bool
     {
-        return $user->is_admin;
+        return $user->isAdmin();
     }
 }

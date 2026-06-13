@@ -53,6 +53,7 @@ class UserAccessTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
 
+        $this->assertFalse(UserResource::canViewAny());
         $this->assertFalse(UserResource::shouldRegisterNavigation());
     }
 
@@ -60,6 +61,7 @@ class UserAccessTest extends TestCase
     {
         $this->actingAs(User::factory()->admin()->create());
 
+        $this->assertTrue(UserResource::canViewAny());
         $this->assertTrue(UserResource::shouldRegisterNavigation());
     }
 }

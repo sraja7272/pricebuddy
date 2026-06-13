@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Filament;
 
+use App\Enums\Role;
 use App\Filament\Pages\AppSettingsPage;
 use App\Filament\Pages\Login;
 use App\Filament\Resources\UserResource;
@@ -93,10 +94,10 @@ class OidcAuthTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // is_admin cannot be set by a non-admin via the form
+    // role cannot be elevated by a non-admin via the form
     // -------------------------------------------------------------------------
 
-    public function test_non_admin_cannot_elevate_own_is_admin_via_edit_form(): void
+    public function test_non_admin_cannot_elevate_own_role_via_edit_form(): void
     {
         $this->actingAs($this->regularUser);
 
@@ -106,14 +107,14 @@ class OidcAuthTest extends TestCase
             ->fillForm([
                 'name' => $this->regularUser->name,
                 'email' => $this->regularUser->email,
-                'is_admin' => true,
+                'role' => Role::Admin->value,
             ])
             ->call('save')
             ->assertHasNoFormErrors();
 
         $this->regularUser->refresh();
 
-        $this->assertFalse($this->regularUser->is_admin, 'Non-admin should not be able to set is_admin via the form');
+        $this->assertFalse($this->regularUser->isAdmin(), 'Non-admin should not be able to set their role to Admin via the form');
     }
 
     // -------------------------------------------------------------------------

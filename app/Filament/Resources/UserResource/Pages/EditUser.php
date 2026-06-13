@@ -22,7 +22,7 @@ class EditUser extends EditRecord
     public static function canAccess(array $parameters = []): bool
     {
         $user = auth()->user();
-        if ($user?->is_admin) {
+        if ($user?->isAdmin()) {
             return true;
         }
         // Non-admins may only reach their own edit page.
@@ -39,14 +39,7 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make()->icon(Icons::Delete->value)->visible(fn () => (bool) auth()->user()?->is_admin),
+            Actions\DeleteAction::make()->icon(Icons::Delete->value)->visible(fn () => (bool) auth()->user()?->isAdmin()),
         ];
-    }
-
-    protected function afterSave(): void
-    {
-        if (auth()->user()?->is_admin) {
-            $this->record->forceFill(['is_admin' => (bool) ($this->data['is_admin'] ?? false)])->save();
-        }
     }
 }
