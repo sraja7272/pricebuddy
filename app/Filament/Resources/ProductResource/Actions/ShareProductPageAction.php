@@ -70,7 +70,7 @@ class ShareProductPageAction extends Action
             $record = $this->getRecord();
 
             $previousIds = $record->sharedWith()->pluck('users.id')->all();
-            $newIds      = array_map('intval', $data['users'] ?? []);
+            $newIds = array_map('intval', $data['users'] ?? []);
 
             $record->sharedWith()->sync($newIds);
 

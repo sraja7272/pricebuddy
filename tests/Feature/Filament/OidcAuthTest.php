@@ -9,7 +9,6 @@ use App\Filament\Resources\UserResource;
 use App\Filament\Resources\UserResource\Pages\EditUser;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -19,6 +18,7 @@ class OidcAuthTest extends TestCase
     use RefreshDatabase;
 
     protected User $adminUser;
+
     protected User $regularUser;
 
     protected function setUp(): void

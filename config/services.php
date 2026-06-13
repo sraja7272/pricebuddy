@@ -55,15 +55,15 @@ return [
     */
 
     'oidc' => [
-        'base_url'       => env('OIDC_BASE_URL'),
-        'client_id'      => env('OIDC_CLIENT_ID'),
-        'client_secret'  => env('OIDC_CLIENT_SECRET'),
-        'redirect'       => env('OIDC_REDIRECT_URI'),
-        'verify_jwt'     => env('OIDC_VERIFY_JWT', true),
+        'base_url' => env('OIDC_BASE_URL'),
+        'client_id' => env('OIDC_CLIENT_ID'),
+        'client_secret' => env('OIDC_CLIENT_SECRET'),
+        'redirect' => env('OIDC_REDIRECT_URI'),
+        'verify_jwt' => env('OIDC_VERIFY_JWT', true),
         'jwt_public_key' => env('OIDC_JWT_PUBLIC_KEY'),
-        'scopes'         => explode(' ', (string) env('OIDC_SCOPES', 'openid profile email')),
-        'admin_group'    => env('OIDC_ADMIN_GROUP'),
-        'groups_claim'   => env('OIDC_GROUPS_CLAIM', 'groups'),
+        'scopes' => explode(' ', (string) env('OIDC_SCOPES', 'openid profile email')),
+        'admin_group' => env('OIDC_ADMIN_GROUP'),
+        'groups_claim' => env('OIDC_GROUPS_CLAIM', 'groups'),
     ],
 
 ];
