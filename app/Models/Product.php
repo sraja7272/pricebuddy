@@ -40,6 +40,7 @@ use Illuminate\Support\Str;
  * @property string $trend
  * @property EloquentCollection<Url> $urls
  * @property EloquentCollection<Tag> $tags
+ * @property EloquentCollection<int, User> $sharedWith
  * @property ?float $notify_price
  * @property ?float $notify_percent
  * @property bool $notify_in_stock

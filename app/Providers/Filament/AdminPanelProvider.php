@@ -51,7 +51,7 @@ class AdminPanelProvider extends PanelProvider
             $plugins[] = FilamentSocialitePlugin::make()
                 ->providers([
                     Provider::make('oidc')
-                        ->label(env('OIDC_BUTTON_LABEL', 'Single Sign-On'))
+                        ->label(config('services.oidc.button_label'))
                         ->icon('heroicon-o-key'),
                 ])
                 ->slug('admin')

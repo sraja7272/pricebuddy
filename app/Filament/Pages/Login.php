@@ -51,6 +51,6 @@ class Login extends BaseLogin
 
     protected function isLocalLoginDisabled(): bool
     {
-        return filter_var(env('DISABLE_LOCAL_LOGIN', false), FILTER_VALIDATE_BOOLEAN);
+        return filter_var(config('services.oidc.disable_local_login'), FILTER_VALIDATE_BOOLEAN);
     }
 }

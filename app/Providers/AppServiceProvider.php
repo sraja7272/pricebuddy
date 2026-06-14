@@ -176,6 +176,7 @@ class AppServiceProvider extends ServiceProvider
             }
 
             // Never demote the bootstrap admin to prevent lock-out
+            // @phpstan-ignore-next-line
             $isAdmin = in_array($adminGroup, $groups, true) || $user->email === env('APP_USER_EMAIL');
             $user->forceFill(['role' => $isAdmin ? Role::Admin : Role::User])->save();
 

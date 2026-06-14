@@ -60,8 +60,11 @@ class ShareProductPageAction extends Action
         ]);
 
         $this->mountUsing(function (\Filament\Forms\ComponentContainer $form): void {
+            /** @var Product $record */
+            $record = $this->getRecord();
+
             $form->fill([
-                'users' => $this->getRecord()->sharedWith->pluck('id')->all(),
+                'users' => $record->sharedWith->pluck('id')->all(),
             ]);
         });
 
