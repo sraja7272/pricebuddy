@@ -187,17 +187,13 @@ This method uses a headless browser to render the page and get the HTML. This is
 means that JavaScript is executed and the page is rendered as if you were viewing
 it in a browser.
 
-We use [SeleniumBase Scrapper](https://github.com/jez500/seleniumbase-scrapper) to do this, which is a 
-docker image running a headless browser. Internally it uses [SeleniumBase](https://seleniumbase.io/).
+We use [CloakBrowser](https://github.com/CloakHQ/cloakbrowser) to do this, a stealth
+Chromium that passes most bot-detection checks, wrapped in a small adapter
+(`docker/scraper`) that exposes the same `/api/article` REST API the app talks to.
 
-There are many advanced settings you can use with this service if the site you are
-scraping is proving difficult to get the data from. 
-
-The [SeleniumBase Scrapper docker image](https://hub.docker.com/repository/docker/jez500/seleniumbase-scrapper)
-is interchangeable with [Scrapper](https://github.com/amerkurev/scrapper) and was based on the scrapper api.
-
-If you are using Scrapper, it provides its own web interface for testing and debugging, if you're using
-the default `docker-compose.yml` you can access this at `http://localhost:3000`. 
+If a site is proving difficult to scrape, you can adjust the `scraper_service_settings`
+for the store. The supported settings are `wait-until` (`load`, `domcontentloaded` or
+`networkidle`), `timeout` and `sleep` (both in milliseconds).
 
 ## Auto store creation
 

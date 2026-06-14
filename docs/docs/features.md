@@ -63,8 +63,8 @@ See [stores](/stores.html#ai-price-extraction) for how to enable it per store.
 ## Support for JS rendered sites
 
 A headless browser can be used to scrape sites that require Javascript to render 
-the page. This is done via [SeleniumBase](https://seleniumbase.io/) running chrome
-in a docker container with a rest api.
+the page. This is done via [CloakBrowser](https://github.com/CloakHQ/cloakbrowser), a
+stealth Chromium, running in a docker container behind a rest api.
 
 ## Organise your products
 

@@ -107,7 +107,7 @@ Each field (title, price, image, availability) has a strategy entry. See the `ur
 ```
 
 - `scraper_service` — `http` (curl, fast) or `api` (browser-based, JS rendering)
-- `scraper_service_settings` — Only used for API scraper. Newline-separated `key=value` options passed to seleniumbase
+- `scraper_service_settings` — Only used for API scraper. Newline-separated `key=value` options passed to the CloakBrowser scraper adapter (`wait-until`, `timeout`, `sleep`)
 - `test_url` — Saved when testing a store via the Test page
 - `locale_settings` — Used by `CurrencyHelper` for price parsing and formatting
 
