@@ -14,11 +14,13 @@ rendering is done by CloakBrowser (a stealth Chromium) instead of seleniumbase.
 
 import logging
 import os
+import time
 from typing import Dict, Optional
 
 from cloakbrowser import launch
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -26,6 +28,20 @@ app = FastAPI(title="cloakbrowser-scraper-adapter")
 
 VALID_WAIT_UNTIL = {"load", "domcontentloaded", "networkidle", "commit"}
 DEFAULT_WAIT_UNTIL = "networkidle"
+
+# The `timeout` param is also the *caller's* (PHP) request timeout, which starts
+# ticking before our browser launch overhead. Reserve some of it as headroom so we
+# always respond before the caller gives up, and never let the remaining budget
+# drop below a sane floor for Playwright's own timeout.
+RESPONSE_OVERHEAD_BUFFER_MS = 8000
+MIN_REMAINING_MS = 1000
+
+# Many sites (eg. BestBuy) never go fully `networkidle`/`load` due to ongoing ads,
+# analytics, or chat-widget polling. Cap the extra wait beyond `domcontentloaded` so
+# such sites don't burn the entire remaining budget waiting for something that will
+# never happen - by the time `domcontentloaded` fires, an SPA has usually already
+# hydrated its content.
+MAX_EXTRA_WAIT_MS = 8000
 
 # Stealth defaults can be tuned via env without rebuilding the image.
 HUMANIZE = os.environ.get("CLOAK_HUMANIZE", "true").lower() != "false"
@@ -57,15 +73,36 @@ def article(
 
     headers = _parse_extra_http_headers(extra_http_headers)
 
+    start = time.monotonic()
+    budget_ms = max(timeout - RESPONSE_OVERHEAD_BUFFER_MS, MIN_REMAINING_MS)
+
+    def remaining_ms() -> int:
+        elapsed = (time.monotonic() - start) * 1000
+        return max(int(budget_ms - elapsed), MIN_REMAINING_MS)
+
     browser = None
     try:
         browser = launch(humanize=HUMANIZE, geoip=GEOIP, proxy=PROXY)
         context = browser.new_context(extra_http_headers=headers) if headers else browser.new_context()
         try:
             page = context.new_page()
-            page.goto(url, wait_until=wait_until, timeout=timeout)
+
+            # `domcontentloaded` is fast and reliable. Heavy sites (eg. BestBuy) keep
+            # background connections open (ads, analytics, chat widgets) and never
+            # reach `networkidle`/`load` within a sane timeout, so treat those as a
+            # best-effort extra wait on top of `domcontentloaded` rather than a hard
+            # requirement - we still return whatever HTML has rendered so far.
+            page.goto(url, wait_until="domcontentloaded", timeout=remaining_ms())
+
+            if wait_until in ("load", "networkidle"):
+                try:
+                    page.wait_for_load_state(wait_until, timeout=min(remaining_ms(), MAX_EXTRA_WAIT_MS))
+                except PlaywrightTimeoutError:
+                    logger.info("Timed out waiting for '%s' on %s, returning current content", wait_until, url)
+
             if sleep:
-                page.wait_for_timeout(sleep)
+                page.wait_for_timeout(min(sleep, remaining_ms()))
+
             html = page.content()
         finally:
             context.close()
