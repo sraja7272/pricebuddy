@@ -107,11 +107,11 @@ services:
     type: lando
     app_mount: false
     overrides:
-      image: jez500/seleniumbase-scrapper:latest
+      build:
+        context: .
+        dockerfile: docker/scraper/Dockerfile
       ports:
         - 3001:3000
-    services:
-      command: "/docker-entrypoint-api.sh"
   node:
     type: node:20
     overrides:

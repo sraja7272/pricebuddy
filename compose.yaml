@@ -71,8 +71,18 @@ services:
         splunk-verify-connection: "false"
 
   scraper:
-    image: jez500/seleniumbase-scrapper:v1.0@sha256:501895ba8e1f592b0480c870d10113b94f1a2ba3185dfaf89b41b9e36fe8f25f
+    build:
+      context: .
+      dockerfile: docker/scraper/Dockerfile
     restart: unless-stopped
+    environment:
+      CLOAKBROWSER_AUTO_UPDATE: "false"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:3000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     logging:
       driver: splunk
       options:
