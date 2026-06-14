@@ -9,7 +9,6 @@ use App\Filament\Resources\UserResource;
 use App\Filament\Resources\UserResource\Pages\EditUser;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -19,6 +18,7 @@ class OidcAuthTest extends TestCase
     use RefreshDatabase;
 
     protected User $adminUser;
+
     protected User $regularUser;
 
     protected function setUp(): void
@@ -123,19 +123,15 @@ class OidcAuthTest extends TestCase
 
     public function test_authenticate_is_denied_when_local_login_disabled(): void
     {
-        $_ENV['DISABLE_LOCAL_LOGIN'] = 'true';
+        config(['services.oidc.disable_local_login' => true]);
 
-        try {
-            Livewire::test(Login::class)
-                ->fillForm([
-                    'email' => $this->adminUser->email,
-                    'password' => 'password',
-                ])
-                ->call('authenticate')
-                ->assertHasFormErrors();
-        } finally {
-            unset($_ENV['DISABLE_LOCAL_LOGIN']);
-        }
+        Livewire::test(Login::class)
+            ->fillForm([
+                'email' => $this->adminUser->email,
+                'password' => 'password',
+            ])
+            ->call('authenticate')
+            ->assertHasFormErrors();
     }
 
     public function test_local_login_works_when_not_disabled(): void

@@ -62,7 +62,7 @@ class ShareProductAction extends Action
 
         $this->action(function (array $data, Product $record): void {
             $previousIds = $record->sharedWith()->pluck('users.id')->all();
-            $newIds      = array_map('intval', $data['users'] ?? []);
+            $newIds = array_map('intval', $data['users'] ?? []);
 
             $record->sharedWith()->sync($newIds);
 

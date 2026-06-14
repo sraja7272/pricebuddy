@@ -168,7 +168,7 @@ class AppServiceProvider extends ServiceProvider
 
             Log::info('OIDC: login', [
                 'username' => $username,
-                'groups'   => $groups,
+                'groups' => $groups,
             ]);
 
             if (! filled($adminGroup)) {
@@ -176,18 +176,18 @@ class AppServiceProvider extends ServiceProvider
             }
 
             // Never demote the bootstrap admin to prevent lock-out
+            // @phpstan-ignore-next-line
             $isAdmin = in_array($adminGroup, $groups, true) || $user->email === env('APP_USER_EMAIL');
             $user->forceFill(['role' => $isAdmin ? Role::Admin : Role::User])->save();
 
             Log::info('OIDC: admin sync', [
-                'username'    => $username,
+                'username' => $username,
                 'admin_group' => $adminGroup,
-                'granted'     => $isAdmin,
+                'granted' => $isAdmin,
             ]);
         };
 
         Event::listen(SocialiteLogin::class, $syncAdmin);
         Event::listen(SocialiteRegistered::class, $syncAdmin);
     }
-
 }
