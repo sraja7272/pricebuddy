@@ -13,6 +13,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
 use NotificationChannels\Pushover\PushoverMessage;
+use NotificationChannels\WebPush\WebPushMessage;
 
 /**
  * Notifies a user that a product they track is back in stock.
@@ -110,6 +111,17 @@ class StockAlertNotification extends Notification
     public function toNtfy($notifiable)
     {
         return $this->genericMessage();
+    }
+
+    public function toWebPush(mixed $notifiable, mixed $notification): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title($this->getTitle())
+            ->body($this->getSummary())
+            ->icon('/images/icon.png')
+            ->badge('/images/icon.png')
+            ->data(['url' => parse_url($this->getUrl(), PHP_URL_PATH) ?: '/admin'])
+            ->action('View', 'view');
     }
 
     protected function genericMessage(): GenericNotificationMessage
