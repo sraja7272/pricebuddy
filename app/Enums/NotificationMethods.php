@@ -27,6 +27,8 @@ enum NotificationMethods: string
 
     case Ntfy = 'ntfy';
 
+    case WebPush = 'webpush';
+
     public function getChannel(): string
     {
         return match ($this) {
@@ -36,6 +38,7 @@ enum NotificationMethods: string
             self::Telegram => TelegramChannel::class,
             self::Discord => DiscordChannel::class,
             self::Ntfy => NtfyChannel::class,
+            self::WebPush => \NotificationChannels\WebPush\WebPushChannel::class,
             default => $this->value,
         };
     }
