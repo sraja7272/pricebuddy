@@ -8,6 +8,7 @@ use App\Notifications\Channels\GotifyChannel;
 use App\Notifications\Channels\NtfyChannel;
 use App\Notifications\Channels\TelegramChannel;
 use NotificationChannels\Pushover\PushoverChannel;
+use NotificationChannels\WebPush\WebPushChannel;
 
 enum NotificationMethods: string
 {
@@ -38,7 +39,7 @@ enum NotificationMethods: string
             self::Telegram => TelegramChannel::class,
             self::Discord => DiscordChannel::class,
             self::Ntfy => NtfyChannel::class,
-            self::WebPush => \NotificationChannels\WebPush\WebPushChannel::class,
+            self::WebPush => WebPushChannel::class,
             default => $this->value,
         };
     }
