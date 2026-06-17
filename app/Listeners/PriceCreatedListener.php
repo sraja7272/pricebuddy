@@ -29,7 +29,16 @@ class PriceCreatedListener
         try {
             // Notify all users with access if the price is within the range.
             if ($product->shouldNotifyOnPrice($event->price) && $url->shouldNotifyOnPrice($event->price)) {
-                $product->usersWithAccess()->each(fn ($user) => $user->notify(new PriceAlertNotification($url)));
+                $previousMin = $url->prices()
+                    ->where('id', '!=', $event->price->id)
+                    ->whereNotNull('price')
+                    ->min('price');
+
+                $isLowestEver = $previousMin !== null && $event->price->price < $previousMin;
+
+                $product->usersWithAccess()->each(
+                    fn ($user) => $user->notify(new PriceAlertNotification($url, isLowestEver: $isLowestEver))
+                );
                 $event->price->update(['notified' => true]);
             }
         } catch (Exception $e) {
