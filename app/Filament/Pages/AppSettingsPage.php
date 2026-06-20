@@ -11,6 +11,7 @@ use App\Filament\Actions\Notifications\TestAppriseAction;
 use App\Filament\Actions\Notifications\TestDiscordAction;
 use App\Filament\Actions\Notifications\TestGotifyAction;
 use App\Filament\Actions\Notifications\TestTelegramAction;
+use App\Filament\Actions\Notifications\TestWebPushAction;
 use App\Filament\Traits\FormHelperTrait;
 use App\Models\UrlResearch;
 use App\Rules\ValidCron;
@@ -22,6 +23,7 @@ use App\Services\Helpers\ScheduleHelper;
 use App\Services\OllamaService;
 use App\Services\SearchService;
 use App\Settings\AppSettings;
+use Filament\Forms\Components\Actions;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Hidden;
@@ -477,7 +479,11 @@ class AppSettingsPage extends SettingsPage
             'Web Push (PWA)',
             self::NOTIFICATION_SERVICES_KEY,
             NotificationMethods::WebPush->value,
-            [],
+            [
+                Actions::make([
+                    TestWebPushAction::make(),
+                ]),
+            ],
             __('Native push notifications to devices where users have installed PriceBuddy as a PWA. Requires VAPID keys set in the server environment (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY).'),
             flat: true
         );
