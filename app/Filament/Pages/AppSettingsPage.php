@@ -205,6 +205,7 @@ class AppSettingsPage extends SettingsPage
                             $this->getTelegramSettings(),
                             $this->getDiscordSettings(),
                             $this->getNtfySettings(),
+                            $this->getWebPushSettings(),
                         ]),
 
                     Tabs\Tab::make('AI')
@@ -466,6 +467,18 @@ class AppSettingsPage extends SettingsPage
                     ->hintIcon(Icons::Help->value, __('Optional. Only needed for protected self-hosted servers.')),
             ],
             __('Push notifications via ntfy. Each user subscribes to their own topic in their profile.'),
+            flat: true
+        );
+    }
+
+    protected function getWebPushSettings(): Group
+    {
+        return self::makeSettingsSection(
+            'Web Push (PWA)',
+            self::NOTIFICATION_SERVICES_KEY,
+            NotificationMethods::WebPush->value,
+            [],
+            __('Native push notifications to devices where users have installed PriceBuddy as a PWA. Requires VAPID keys set in the server environment (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY).'),
             flat: true
         );
     }
