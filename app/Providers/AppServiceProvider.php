@@ -75,6 +75,24 @@ class AppServiceProvider extends ServiceProvider
             ]),
         );
 
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_END,
+            function (): string {
+                if (! auth()->check()) {
+                    return '';
+                }
+
+                $vapidPublicKey = config('webpush.vapid.public_key', '');
+
+                return Blade::render(
+                    '<script>window.__VAPID_PUBLIC_KEY__ = '.json_encode($vapidPublicKey).';</script>'.
+                    '@vite([\'resources/js/push-notifications.js\'])'.
+                    '<x-push-optin />'.
+                    '<x-push-ios-install />'
+                );
+            }
+        );
+
         Filament::registerUserMenuItems([
             MenuItem::make()
                 ->label(__('Account settings'))
