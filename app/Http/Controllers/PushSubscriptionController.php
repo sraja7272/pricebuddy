@@ -11,7 +11,32 @@ class PushSubscriptionController extends Controller
     public function subscribe(Request $request): Response
     {
         $request->validate([
-            'endpoint' => ['required', 'string', 'url'],
+            'endpoint' => [
+                'required', 'string', 'url',
+                function (string $attr, string $value, \Closure $fail): void {
+                    $host = parse_url($value, PHP_URL_HOST) ?: '';
+                    $allowed = [
+                        'fcm.googleapis.com',
+                        'updates.push.services.mozilla.com',
+                        'notify.windows.com',
+                        'push.apple.com',
+                    ];
+                    $allowedSuffixes = ['.push.apple.com', '.notify.windows.com'];
+
+                    foreach ($allowed as $domain) {
+                        if ($host === $domain) {
+                            return;
+                        }
+                    }
+                    foreach ($allowedSuffixes as $suffix) {
+                        if (str_ends_with($host, $suffix)) {
+                            return;
+                        }
+                    }
+
+                    $fail('The push endpoint host is not a recognised push service.');
+                },
+            ],
             'keys.p256dh' => ['required', 'string'],
             'keys.auth' => ['required', 'string'],
             'contentEncoding' => ['nullable', 'string'],
