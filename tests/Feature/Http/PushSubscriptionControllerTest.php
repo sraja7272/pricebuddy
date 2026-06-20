@@ -23,10 +23,10 @@ class PushSubscriptionControllerTest extends TestCase
         $this->actingAs($this->user);
 
         $response = $this->postJson('/push/subscribe', [
-            'endpoint'        => 'https://fcm.googleapis.com/fcm/send/abc',
-            'keys'            => [
+            'endpoint' => 'https://fcm.googleapis.com/fcm/send/abc',
+            'keys' => [
                 'p256dh' => 'BNPublicKey==',
-                'auth'   => 'AuthToken==',
+                'auth' => 'AuthToken==',
             ],
             'contentEncoding' => 'aes128gcm',
         ]);
@@ -34,9 +34,9 @@ class PushSubscriptionControllerTest extends TestCase
         $response->assertNoContent();
 
         $this->assertDatabaseHas('push_subscriptions', [
-            'subscribable_id'   => $this->user->id,
+            'subscribable_id' => $this->user->id,
             'subscribable_type' => User::class,
-            'endpoint'          => 'https://fcm.googleapis.com/fcm/send/abc',
+            'endpoint' => 'https://fcm.googleapis.com/fcm/send/abc',
         ]);
 
         $this->user->refresh();
@@ -77,7 +77,7 @@ class PushSubscriptionControllerTest extends TestCase
     {
         $response = $this->postJson('/push/subscribe', [
             'endpoint' => 'https://test.endpoint',
-            'keys'     => ['p256dh' => 'pub', 'auth' => 'auth'],
+            'keys' => ['p256dh' => 'pub', 'auth' => 'auth'],
         ]);
 
         $response->assertUnauthorized();

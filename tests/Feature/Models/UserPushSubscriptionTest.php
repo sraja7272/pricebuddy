@@ -23,8 +23,8 @@ class UserPushSubscriptionTest extends TestCase
 
         $this->assertDatabaseHas('push_subscriptions', [
             'subscribable_type' => User::class,
-            'subscribable_id'   => $user->id,
-            'endpoint'          => 'https://fcm.googleapis.com/fcm/send/test-endpoint',
+            'subscribable_id' => $user->id,
+            'endpoint' => 'https://fcm.googleapis.com/fcm/send/test-endpoint',
         ]);
     }
 
