@@ -200,6 +200,7 @@ class AppSettingsPage extends SettingsPage
                     Tabs\Tab::make('Notifications')
                         ->icon('heroicon-o-bell')
                         ->schema([
+                            $this->getWebPushSettings(),
                             $this->getEmailSettings(),
                             $this->getPushoverSettings(),
                             $this->getGotifySettings(),
@@ -207,7 +208,6 @@ class AppSettingsPage extends SettingsPage
                             $this->getTelegramSettings(),
                             $this->getDiscordSettings(),
                             $this->getNtfySettings(),
-                            $this->getWebPushSettings(),
                         ]),
 
                     Tabs\Tab::make('AI')
@@ -484,7 +484,7 @@ class AppSettingsPage extends SettingsPage
                     TestWebPushAction::make(),
                 ]),
             ],
-            __('Native push notifications to devices where users have installed PriceBuddy as a PWA. Requires VAPID keys set in the server environment (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY).'),
+            __('Native push notifications to devices where users have installed PriceBuddy as a PWA.'),
             flat: true
         );
     }

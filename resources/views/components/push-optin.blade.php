@@ -2,6 +2,7 @@
     x-data="{
         show: false,
         loading: false,
+        error: '',
         init() {
             if (!window.PushNotifications || !window.PushNotifications.isSupported()) return;
             if (Notification.permission !== 'default') return;
@@ -14,12 +15,13 @@
         },
         async enable() {
             this.loading = true;
+            this.error = '';
             try {
                 await window.PushNotifications.enable();
                 localStorage.setItem('pb_push_dismissed', '1');
                 this.show = false;
             } catch (e) {
-                this.dismiss();
+                this.error = 'Could not enable notifications. You can try again, or enable them later from your profile settings.';
             } finally {
                 this.loading = false;
             }
@@ -45,6 +47,7 @@
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Get instant push notifications when a product you're tracking drops in price or comes back in stock — right on this device.
                 </p>
+                <p x-show="error" x-text="error" class="mt-2 text-sm text-danger-600 dark:text-danger-400"></p>
             </div>
         </div>
         <div class="mt-6 flex justify-end gap-3">

@@ -31,7 +31,8 @@ RUN docker-php-ext-install exif \
     && docker-php-ext-install mysqli pdo pdo_mysql pdo_pgsql \
     && docker-php-ext-install zip \
     && docker-php-ext-configure intl \
-    && docker-php-ext-install intl
+    && docker-php-ext-install intl \
+    && docker-php-ext-install bcmath
 
 # Install composer
 ENV COMPOSER_ALLOW_SUPERUSER=1
