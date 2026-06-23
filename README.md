@@ -38,9 +38,10 @@ highs, and the trend at a glance — and avoid a "sale" that isn't really a sale
 
 ### 🔔 Get notified, your way
 Set a target price or a price-drop threshold and let PriceBuddy do the watching.
-Alerts can reach you in the app, by email, or through
-**Pushover, Gotify, Apprise, Telegram, Discord and ntfy** — pick the ones you
-already use.
+Alerts can reach you in the app, by email, through
+**Pushover, Gotify, Apprise, Telegram, Discord and ntfy**, or as **native push
+notifications** on any device where you've installed PriceBuddy as a PWA —
+pick the ones you already use.
 
 ### 📦 Availability tracking
 See whether the cheapest option is actually buyable. PriceBuddy detects in
@@ -108,6 +109,49 @@ up.
 The most common settings live on the in-app settings page. A handful of advanced
 options can be set via the `.env` file. See the
 [settings docs](https://pricebuddy.jez.me/settings.html) for details.
+
+## Web Push (PWA) notifications
+
+PriceBuddy can send native push notifications to any device where it's installed
+as a PWA. This requires a one-time VAPID key setup:
+
+**1. Generate VAPID keys** (run once, keep them stable — rotating invalidates all
+existing subscriptions):
+
+If you have Node.js available (which you already do if you ran `npm run build`):
+
+```shell
+npx web-push generate-vapid-keys
+```
+
+Or, if your PriceBuddy container is running normally:
+
+```shell
+docker compose run --rm app php artisan webpush:vapid
+```
+
+Copy the output into your `.env` (or `docker-compose.yml` environment section):
+
+```dotenv
+VAPID_PUBLIC_KEY=<paste output>
+VAPID_PRIVATE_KEY=<paste output>
+VAPID_SUBJECT=mailto:you@example.com
+```
+
+**2. Enable the channel** in the admin panel: **Settings → Notifications → Web Push (PWA) → Enabled**.
+
+**3. Subscribe on each device:**
+- **Android / desktop Chrome/Firefox/Edge** — install PriceBuddy as a PWA (browser
+  menu → "Install app" or "Add to Home Screen"), then accept the push permission
+  prompt that appears on first open, or toggle it on under your profile settings.
+- **iOS (Safari, iOS 16.4+)** — open PriceBuddy in Safari and tap
+  **Share → Add to Home Screen**, then open it from the Home Screen and enable
+  notifications when prompted. Push is not available in the iOS Safari browser tab
+  itself, nor in Chrome/Firefox for iOS — it requires the installed PWA.
+
+> **HTTPS is required** for service workers and Web Push. The app works over plain
+> HTTP on `localhost` for local development, but push will only work in production
+> when served over HTTPS.
 
 ## Affiliate codes
 

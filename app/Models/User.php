@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use NotificationChannels\WebPush\HasPushSubscriptions;
 
 /**
  * @property string $name
@@ -26,7 +27,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasNotifications, Notifiable;
+    use HasApiTokens, HasFactory, HasNotifications, HasPushSubscriptions, Notifiable;
 
     /**
      * The attributes that are mass assignable.

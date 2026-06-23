@@ -108,6 +108,7 @@ class UserResource extends Resource
                 self::getTelegramSettings(),
                 self::getDiscordSettings(),
                 self::getNtfySettings(),
+                self::getPushNotificationSettings(),
             ]);
     }
 
@@ -255,5 +256,16 @@ class UserResource extends Resource
                     ->hintIcon(Icons::Help->value, __('A unique topic name you subscribe to in the ntfy app. Anyone who knows the topic can read it, so pick something hard to guess.')),
             ]
         );
+    }
+
+    protected static function getPushNotificationSettings(): \Filament\Forms\Components\Section
+    {
+        return \Filament\Forms\Components\Section::make(__('Push Notifications (this device)'))
+            ->description(__('Enable or disable native push notifications on the current browser/device.'))
+            ->schema([
+                \Filament\Forms\Components\ViewField::make('push_settings')
+                    ->label('')
+                    ->view('components.push-settings'),
+            ]);
     }
 }

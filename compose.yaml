@@ -29,6 +29,9 @@ services:
       OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI}
       OIDC_ADMIN_GROUP: ${OIDC_ADMIN_GROUP}
       DISABLE_LOCAL_LOGIN: ${DISABLE_LOCAL_LOGIN}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+      VAPID_SUBJECT: ${VAPID_SUBJECT}
     volumes:
     - /data/price-tracker/storage:/app/storage
     depends_on:

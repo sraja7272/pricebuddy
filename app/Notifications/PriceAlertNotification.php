@@ -13,6 +13,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
 use NotificationChannels\Pushover\PushoverMessage;
+use NotificationChannels\WebPush\WebPushMessage;
 
 class PriceAlertNotification extends Notification
 {
@@ -25,7 +26,7 @@ class PriceAlertNotification extends Notification
     /**
      * Create a new notification instance.
      */
-    public function __construct(protected Url $url)
+    public function __construct(protected Url $url, public bool $isLowestEver = false)
     {
         $this->product = $url->product;
     }
@@ -137,9 +138,22 @@ class PriceAlertNotification extends Notification
             ->priority(5);
     }
 
+    public function toWebPush(mixed $notifiable, mixed $notification): WebPushMessage
+    {
+        return (new WebPushMessage)
+            ->title($this->getTitle())
+            ->body($this->getSummary())
+            ->icon('/images/icon.png')
+            ->badge('/images/icon.png')
+            ->data(['url' => parse_url($this->getUrl(), PHP_URL_PATH) ?: '/admin'])
+            ->action('View', 'view');
+    }
+
     protected function getTitle(): string
     {
-        return 'Price drop: '.$this->url->product_name_short.' ('.$this->url->latest_price_formatted.')';
+        $prefix = $this->isLowestEver ? 'Lowest ever:' : 'Price drop:';
+
+        return $prefix.' '.$this->url->product_name_short.' ('.$this->url->latest_price_formatted.')';
     }
 
     protected function getSummary(): string
