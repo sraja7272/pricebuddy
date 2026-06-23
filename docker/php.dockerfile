@@ -36,6 +36,12 @@ RUN apt-get update && apt-get upgrade -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# jez500/pricebuddy-base ships without bcmath/gmp, so minishlink/web-push
+# falls back to trigger_error() on every send, which Laravel's error handler
+# turns into a fatal ErrorException. Install it here since this stage is
+# what actually gets deployed.
+RUN docker-php-ext-install bcmath
+
 COPY ../../docker/php/php.ini /usr/local/etc/php/conf.d/zzz-php-overrides.ini
 COPY ../../docker/php/schedule-cron /etc/cron.d/schedule-cron
 COPY ../../docker/php/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

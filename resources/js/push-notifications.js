@@ -49,12 +49,7 @@ const PushNotifications = {
         return !!sub;
     },
 
-    async enable() {
-        if (!this.isSupported()) throw new Error('Push not supported on this browser.');
-
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') throw new Error('Permission denied.');
-
+    async subscribeAndSync() {
         const reg = await getRegistration();
         if (!reg) throw new Error('Service worker registration failed.');
 
@@ -69,7 +64,7 @@ const PushNotifications = {
 
         const json = subscription.toJSON();
 
-        await fetch(SUBSCRIBE_URL, {
+        const res = await fetch(SUBSCRIBE_URL, {
             method: 'POST',
             headers: {
                 'Content-Type':  'application/json',
@@ -83,6 +78,33 @@ const PushNotifications = {
                 contentEncoding: (PushManager.supportedContentEncodings || ['aesgcm'])[0],
             }),
         });
+
+        if (!res.ok) throw new Error('Failed to save the subscription on the server.');
+    },
+
+    async enable() {
+        if (!this.isSupported()) throw new Error('Push not supported on this browser.');
+
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') throw new Error('Permission denied.');
+
+        await this.subscribeAndSync();
+    },
+
+    // iOS has been observed to silently drop an active push subscription
+    // (while leaving Notification.permission as 'granted') after the PWA
+    // backgrounds/relaunches. Call this on every page load to transparently
+    // recreate the subscription when that happens, without re-prompting.
+    async ensureSubscribed() {
+        if (!this.isSupported()) return;
+        if (Notification.permission !== 'granted') return;
+        if (await this.isSubscribed()) return;
+
+        try {
+            await this.subscribeAndSync();
+        } catch (e) {
+            console.warn('[PushNotifications] silent re-subscribe failed:', e);
+        }
     },
 
     async disable() {
@@ -111,3 +133,5 @@ const PushNotifications = {
 
 window.PushNotifications = PushNotifications;
 export default PushNotifications;
+
+PushNotifications.ensureSubscribed();
