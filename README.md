@@ -118,6 +118,14 @@ as a PWA. This requires a one-time VAPID key setup:
 **1. Generate VAPID keys** (run once, keep them stable — rotating invalidates all
 existing subscriptions):
 
+If you have Node.js available (which you already do if you ran `npm run build`):
+
+```shell
+npx web-push generate-vapid-keys
+```
+
+Or, if your PriceBuddy container is running normally:
+
 ```shell
 docker compose run --rm app php artisan webpush:vapid
 ```
