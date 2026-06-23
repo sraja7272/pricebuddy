@@ -93,8 +93,10 @@ const PushNotifications = {
 
     // iOS has been observed to silently drop an active push subscription
     // (while leaving Notification.permission as 'granted') after the PWA
-    // backgrounds/relaunches. Call this on every page load to transparently
-    // recreate the subscription when that happens, without re-prompting.
+    // backgrounds/relaunches. Call this to transparently recreate the
+    // subscription when that happens, without re-prompting. WebKit requires
+    // pushManager.subscribe() to run inside a user gesture, so this must be
+    // triggered from a real tap/click rather than unconditionally on load.
     async ensureSubscribed() {
         if (!this.isSupported()) return;
         if (Notification.permission !== 'granted') return;
@@ -134,4 +136,13 @@ const PushNotifications = {
 window.PushNotifications = PushNotifications;
 export default PushNotifications;
 
-PushNotifications.ensureSubscribed();
+// Run the self-heal on the first tap/click anywhere in the app (a real user
+// gesture, which iOS Safari requires for pushManager.subscribe()), rather
+// than unconditionally on script load.
+function resubscribeOnFirstInteraction() {
+    document.removeEventListener('click', resubscribeOnFirstInteraction);
+    document.removeEventListener('touchstart', resubscribeOnFirstInteraction);
+    PushNotifications.ensureSubscribed();
+}
+document.addEventListener('click', resubscribeOnFirstInteraction, { passive: true });
+document.addEventListener('touchstart', resubscribeOnFirstInteraction, { passive: true });
