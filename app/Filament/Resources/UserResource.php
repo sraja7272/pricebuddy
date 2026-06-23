@@ -101,6 +101,7 @@ class UserResource extends Resource
                             ->visible(fn (): bool => auth()->user()?->isAdmin() ?? false),
                     ]),
                 self::makeFormHeading('Notification Settings'),
+                self::getPushNotificationSettings(),
                 self::getEmailSettings(),
                 self::getPushoverSettings(),
                 self::getGotifySettings(),
@@ -108,7 +109,6 @@ class UserResource extends Resource
                 self::getTelegramSettings(),
                 self::getDiscordSettings(),
                 self::getNtfySettings(),
-                self::getPushNotificationSettings(),
             ]);
     }
 
