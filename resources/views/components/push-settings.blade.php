@@ -4,6 +4,7 @@
         subscribed: false,
         permission: 'default',
         loading: false,
+        error: '',
         async init() {
             if (!window.PushNotifications || !window.PushNotifications.isSupported()) {
                 this.supported = false;
@@ -15,6 +16,7 @@
         },
         async toggle() {
             this.loading = true;
+            this.error = '';
             try {
                 if (this.subscribed) {
                     await window.PushNotifications.disable();
@@ -26,7 +28,13 @@
                     this.permission = 'granted';
                 }
             } catch (e) {
+                // Whatever the failure (permission denied, subscribe error,
+                // server rejection), the device must not appear enabled.
+                this.subscribed = false;
                 this.permission = window.PushNotifications.getPermission();
+                this.error = this.permission === 'denied'
+                    ? ''
+                    : 'Could not enable push notifications. Please try again.';
             } finally {
                 this.loading = false;
             }
@@ -68,5 +76,7 @@
                 <span x-show="!loading && !subscribed">Enable push notifications on this device</span>
             </span>
         </div>
+
+        <p x-show="error" x-text="error" class="mt-2 text-sm text-danger-600 dark:text-danger-400"></p>
     </div>
 </div>
