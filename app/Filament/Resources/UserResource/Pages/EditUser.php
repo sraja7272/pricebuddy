@@ -42,4 +42,23 @@ class EditUser extends EditRecord
             Actions\DeleteAction::make()->icon(Icons::Delete->value)->visible(fn () => (bool) auth()->user()?->isAdmin()),
         ];
     }
+
+    /**
+     * The "Push Notifications (this device)" field has no corresponding form
+     * component — it's a raw view that subscribes/unsubscribes directly via
+     * its own endpoints — so the form's dehydrated state never carries a
+     * `webpush` key. Since `settings` is saved as a plain array (full
+     * replace, not a JSON merge), saving this form for any unrelated reason
+     * would otherwise silently wipe out the user's push subscription state.
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $existingWebPush = data_get($this->getRecord()->getAttribute('settings'), 'notifications.webpush');
+
+        if ($existingWebPush !== null) {
+            data_set($data, 'settings.notifications.webpush', $existingWebPush);
+        }
+
+        return $data;
+    }
 }
